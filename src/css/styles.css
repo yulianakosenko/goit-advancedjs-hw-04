@@ -199,13 +199,13 @@ ul {
 }
 
 /* форма */
-.search-form {
+.form {
   display: flex;
   justify-content: center;
   gap: 8px;
   margin-bottom: 22px;
 }
-.search-form input {
+.form input {
   width: 300px;
   padding: 10px 14px;
   border-radius: 12px;
@@ -215,11 +215,11 @@ ul {
   outline: none;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
-.search-form input:focus {
+.form input:focus {
   border-color: #7aa2ff;
   box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.2);
 }
-.search-form button {
+.form button {
   padding: 10px 18px;
   border-radius: 12px;
   border: 1px solid #2a2f55;
@@ -229,7 +229,7 @@ ul {
   cursor: pointer;
   transition: 0.25s ease;
 }
-.search-form button:hover {
+.form button:hover {
   background: linear-gradient(180deg, #27317a 0%, #161b48 100%);
   transform: translateY(-2px);
 }

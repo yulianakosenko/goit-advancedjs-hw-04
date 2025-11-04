@@ -1,6 +1,4 @@
-import './css/styles.css';
-
-import { fetchImages, PER_PAGE } from './js/pixabay-api.js';
+import { fetchImages } from './js/pixabay-api.js';
 import {
   buildCardsMarkup,
   drawGallery,
@@ -9,136 +7,113 @@ import {
   showLoader,
 } from './js/render-functions.js';
 
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 
-import SimpleLightbox from 'simplelightbox';
-import 'simplelightbox/dist/simple-lightbox.min.css';
+const form = document.getElementById('search-form');
+const loadMoreBtn = document.getElementById('load-more');
 
-const form = document.querySelector('#search-form');
-const gallery = document.querySelector('#gallery');
-const loadMoreBtn = document.querySelector('#load-more');
-
-const lightbox = new SimpleLightbox('.gallery a', {
-  captionsData: 'alt',
-  captionDelay: 250,
-});
-
-// ---- Глобальний стан для пагінації ----
-let currentQuery = '';
+let query = '';
 let page = 1;
+const PER_PAGE = 15;
 let totalHits = 0;
+let lightbox = null;
+let isLoading = false;
 
-form.addEventListener('submit', onSearch);
+form.addEventListener('submit', onSubmit);
 loadMoreBtn.addEventListener('click', onLoadMore);
 
-async function onSearch(e) {
+async function onSubmit(e) {
   e.preventDefault();
+  query = e.currentTarget.elements.query.value.trim();
 
-  const query = e.currentTarget.elements.query.value.trim();
   if (!query) {
     iziToast.warning({
-      title: 'Warning',
-      message: 'Please enter a search query!',
+      title: 'Увага',
+      message: 'Введіть пошуковий запит!',
       position: 'topRight',
     });
     return;
   }
 
-  // Скидаємо пагінацію та попередній результат
-  currentQuery = query;
   page = 1;
-  totalHits = 0;
   clearGallery();
   toggleLoadMore(false);
-
-  showLoader(true);
-
-  try {
-    const data = await fetchImages(currentQuery, page);
-    showLoader(false);
-
-    const hits = data?.hits ?? [];
-    totalHits = data?.totalHits ?? 0;
-
-    if (hits.length === 0) {
-      iziToast.info({
-        title: 'No results',
-        message:
-          'Sorry, there are no images matching your search query. Please try again!',
-        position: 'topRight',
-      });
-      return;
-    }
-
-    const markup = buildCardsMarkup(hits);
-    drawGallery(markup);
-    lightbox.refresh();
-
-    // Показуємо Load more, якщо ще є сторінки попереду
-    if (page * PER_PAGE < totalHits) {
-      toggleLoadMore(true);
-    } else {
-      toggleLoadMore(false);
-    }
-  } catch (err) {
-    showLoader(false);
-    iziToast.error({
-      title: 'Error',
-      message: `Something went wrong (${err.message})`,
-      position: 'topRight',
-    });
-  } finally {
-    form.reset();
-  }
+  await loadImages();
 }
 
 async function onLoadMore() {
-  loadMoreBtn.disabled = true;
+  if (isLoading) return;
+  page += 1;
+  await loadImages(true);
+}
+
+async function loadImages(isLoadMore = false) {
+  isLoading = true;
   showLoader(true);
+  loadMoreBtn.disabled = true;
 
   try {
-    page += 1;
-    const data = await fetchImages(currentQuery, page);
-
+    const data = await fetchImages(query, page, PER_PAGE);
     const hits = data?.hits ?? [];
-    const markup = buildCardsMarkup(hits);
-    drawGallery(markup);
-    lightbox.refresh();
 
-    // Плавний скрол на 2 висоти картки
-    smoothScrollByCardHeight();
-
-    // Якщо кінець колекції — ховаємо кнопку + показуємо повідомлення
-    if (page * PER_PAGE >= totalHits) {
-      toggleLoadMore(false);
+    if (hits.length === 0 && page === 1) {
       iziToast.info({
-        title: 'End',
-        message: "We're sorry, but you've reached the end of search results.",
+        title: 'Упс!',
+        message:
+          'За цим запитом нічого не знайдено. Спробуйте інше ключове слово.',
         position: 'topRight',
       });
-    } else {
-      loadMoreBtn.disabled = false;
+      toggleLoadMore(false);
+      return; // <- важливо, але обов’язково сховати лоадер у finally
     }
-  } catch (err) {
+
+    const markup = buildCardsMarkup(hits);
+    drawGallery(markup);
+
+    // SimpleLightbox
+    if (!lightbox) {
+      lightbox = new SimpleLightbox('.gallery a', {
+        captionsData: 'alt',
+        captionDelay: 250,
+      });
+    } else {
+      lightbox.refresh();
+    }
+
+    totalHits = data?.totalHits ?? 0;
+    const totalPages = Math.ceil(totalHits / PER_PAGE);
+
+    // кнопка load more (показуємо тільки якщо ще є сторінки)
+    toggleLoadMore(page < totalPages);
+
+    if (page >= totalPages && page !== 1) {
+      iziToast.info({
+        title: 'Кінець колекції',
+        message: "We're sorry, but you've reached the end of search results.",
+        position: 'bottomCenter',
+      });
+    }
+
+    if (isLoadMore) smoothScroll();
+  } catch (error) {
     iziToast.error({
-      title: 'Error',
-      message: `Something went wrong (${err.message})`,
+      title: 'Помилка',
+      message: error?.message || 'Something went wrong',
       position: 'topRight',
     });
-    loadMoreBtn.disabled = false;
   } finally {
     showLoader(false);
+    loadMoreBtn.disabled = false;
+    isLoading = false;
   }
 }
 
-function smoothScrollByCardHeight() {
-  const firstCard = gallery.querySelector('.gallery-item');
+function smoothScroll() {
+  const firstCard = document.querySelector('.gallery-item');
   if (!firstCard) return;
   const { height } = firstCard.getBoundingClientRect();
-  window.scrollBy({
-    top: height * 2,
-    left: 0,
-    behavior: 'smooth',
-  });
+  window.scrollBy({ top: height * 2, behavior: 'smooth' });
 }
