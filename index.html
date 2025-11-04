@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HW-03 — Пошук зображень (Pixabay)</title>
+    <script type="module" crossorigin src="/goit-advancedjs-hw-04/index.js"></script>
+    <link rel="modulepreload" crossorigin href="/goit-advancedjs-hw-04/assets/vendor-DHjmJuTs.js">
+    <link rel="stylesheet" crossorigin href="/goit-advancedjs-hw-04/assets/vendor-xWYXymKx.css">
+    <link rel="stylesheet" crossorigin href="/goit-advancedjs-hw-04/assets/index-zyygGVny.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="page__title">Пошук зображень Pixabay</h1>
+      <p class="page__subtitle">HTTP-запити, обробка відповіді та галерея</p>
+
+      <form id="search-form" class="form" autocomplete="off">
+        <input
+          type="text"
+          name="query"
+          placeholder="Введіть ключове слово…"
+          required
+        />
+        <button type="submit">Пошук</button>
+      </form>
+
+      <!-- індикатор завантаження -->
+      <span id="loader" class="loader" hidden></span>
+
+      <!-- галерея -->
+      <ul id="gallery" class="gallery"></ul>
+    </div>
+    <!-- Кнопка пагінації -->
+    <div class="loadmore-wrap">
+      <button id="load-more" hidden>Load more</button>
+      <!-- Лоадер під кнопкою -->
+      <span id="loader" class="loader" hidden></span>
+    </div>
+
+  </body>
+</html>
