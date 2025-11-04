@@ -5,7 +5,7 @@ export const PER_PAGE = 15;
 const API_KEY = '53062520-ab6df8030023bb65348d73bcb';
 const BASE_URL = 'https://pixabay.com/api/';
 
-// (опційно) створюємо інстанс з базовими параметрами
+// (опційно) створюємо інстанс з базовими параметрами для майбутніх багаторазових запитів
 const api = axios.create({
   baseURL: BASE_URL,
   params: {
@@ -28,7 +28,7 @@ export async function fetchImages(query, page = 1, perPage = PER_PAGE) {
     params: {
       q: query,
       page,
-      per_page: perPage, // <-- тепер використовуємо аргумент
+      per_page: perPage, // <--використовуємо аргумент
     },
   });
   return data; // { total, totalHits, hits }
